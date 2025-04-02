@@ -1,10 +1,10 @@
 __pycache__/
-.claude
 *.py[cod]
 *$py.class
-CLAUDE.md
+.claude
 *.so
 .Python
+CLAUDE.md
 build/
 develop-eggs/
 dist/
@@ -20,3 +20,10 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
