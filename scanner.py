@@ -18,7 +18,7 @@ def scan_port(target, port, timeout=1):
         result = sock.connect_ex((target, port))
         sock.close()
         return result == 0
-    except socket.gaierror:
+    except (socket.gaierror, socket.timeout, ConnectionRefusedError):
         return False
 
 def threader(target, timeout, quiet=False):
@@ -46,6 +46,14 @@ def main():
     args = parser.parse_args()
     
     target = args.host
+    
+    # Validate hostname
+    try:
+        socket.gethostbyname(target)
+    except socket.gaierror:
+        print(f"Error: Could not resolve hostname '{target}'")
+        sys.exit(1)
+    
     start_time = datetime.now()
     
     if not args.quiet:
@@ -54,13 +62,22 @@ def main():
         print("-" * 50)
     
     # Determine ports to scan
-    if args.ports == "common":
-        ports = [21, 22, 23, 25, 53, 80, 110, 143, 443, 993, 995]
-    elif "-" in args.ports:
-        start, end = map(int, args.ports.split("-"))
-        ports = range(start, end + 1)
-    else:
-        ports = [int(args.ports)]
+    try:
+        if args.ports == "common":
+            ports = [21, 22, 23, 25, 53, 80, 110, 143, 443, 993, 995]
+        elif "-" in args.ports:
+            start, end = map(int, args.ports.split("-"))
+            if start > end or start < 1 or end > 65535:
+                raise ValueError("Invalid port range")
+            ports = range(start, end + 1)
+        else:
+            port = int(args.ports)
+            if port < 1 or port > 65535:
+                raise ValueError("Invalid port number")
+            ports = [port]
+    except ValueError as e:
+        print(f"Error: {e}")
+        sys.exit(1)
     
     # Start threads
     for _ in range(args.threads):
